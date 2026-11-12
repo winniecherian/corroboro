@@ -20,17 +20,27 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      HAS_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
     steps:
+      - name: Skip until Firebase is set up
+        if: env.HAS_FIREBASE != 'true'
+        run: echo "::notice::Add the FIREBASE_SERVICE_ACCOUNT and FIREBASE_PROJECT_ID secrets to start deploying."
+
       - uses: actions/checkout@v4
+        if: env.HAS_FIREBASE == 'true'
 
       - uses: actions/setup-node@v4
+        if: env.HAS_FIREBASE == 'true'
         with:
           node-version: 22
           cache: npm
 
       - run: npm ci
+        if: env.HAS_FIREBASE == 'true'
 
       - name: Build static site with fresh feeds
+        if: env.HAS_FIREBASE == 'true'
         run: npm run export
         env:
           STRICT_FEEDS: "1" # fail instead of publishing sample stories if feeds can't be reached
@@ -39,6 +49,7 @@ jobs:
           X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
 
       - name: Deploy to Firebase Hosting
+        if: env.HAS_FIREBASE == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
