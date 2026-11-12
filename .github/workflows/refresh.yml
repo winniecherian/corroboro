@@ -1,0 +1,47 @@
+# Rebuilds Corroboro with fresh news and deploys it to Firebase Hosting.
+# Runs every 15 minutes, on every push to main, and on demand (Actions tab → Run workflow).
+# Keep the repository PUBLIC: GitHub Actions minutes are unlimited for public repos.
+# A private repo gets 2,000 free minutes a month, which a 15-minute schedule would use up.
+
+name: Refresh and deploy
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build static site with fresh feeds
+        run: npm run export
+        env:
+          STRICT_FEEDS: "1" # fail instead of publishing sample stories if feeds can't be reached
+          NEXT_TELEMETRY_DISABLED: "1"
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+          channelId: live
