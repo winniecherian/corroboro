@@ -55,7 +55,7 @@ A GitHub Actions job rebuilds the site with fresh news every 15 minutes and rede
    - `FIREBASE_SERVICE_ACCOUNT`: paste the whole JSON file
    - `FIREBASE_PROJECT_ID`: your project ID
    - Optional: `ANTHROPIC_API_KEY`, `X_BEARER_TOKEN`
-5. **First deploy:** open the Actions tab → Refresh and deploy → Run workflow. When it finishes, the site is live at `https://YOUR-PROJECT-ID.web.app`.
+5. **First deploy:** open the Actions tab → Refresh and deploy → Run workflow. When it finishes, the site is live at `https://corroboro.web.app`.
 6. **Custom domain (optional):** Hosting → Add custom domain, then follow the DNS steps.
 
 **Safety:** if the feeds can't be reached during a rebuild, the job fails on purpose and the last good version stays live. Sample stories are never published.
