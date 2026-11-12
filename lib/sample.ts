@@ -54,7 +54,12 @@ export function sampleFeed(ok = 0, total = 0): Feed {
       regions,
       status,
       independent,
-      outlets: outlets.map((name) => ({ name, link: "#" })),
+      outlets: outlets.map((name, j) => ({
+        name,
+        link: "#",
+        title: j === 0 ? headline : `${headline.split(",")[0]}${j % 2 ? " — what we know" : ""}`,
+        publishedAt: now - (ageH + 2) * 3_600_000 + j * 17 * 60_000,
+      })),
       firstSeen: now - (ageH + 2) * 3_600_000,
       latest: now - ageH * 3_600_000,
       score: (independent * 10 + outlets.length * 2) * Math.exp(-ageH / 14) * (1 + social.length * 0.25),

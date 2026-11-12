@@ -3,7 +3,7 @@
  * No paid AI needed. Swap in embeddings later for better accuracy.
  */
 import { VERIFIED_MIN } from "./sources";
-import type { Article, Category, Region, Status, Story } from "./types";
+import type { Article, Category, Region, Status, Story, StoryOutlet } from "./types";
 
 const STOP = new Set(
   `a an the and or but if of to in on at by for with from as is are was were be been being it its this that these those
@@ -87,6 +87,12 @@ const JOIN_THRESHOLD = 0.26;
 
 type Cluster = { items: number[]; centroid: Vec };
 
+function hashId(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
 export function clusterArticles(articles: Article[]): Story[] {
   if (!articles.length) return [];
   const order = articles.map((_, i) => i).sort((a, b) => articles[a].publishedAt - articles[b].publishedAt);
@@ -113,7 +119,7 @@ export function clusterArticles(articles: Article[]): Story[] {
   }
 
   const now = Date.now();
-  return clusters.map((c, idx) => {
+  return clusters.map((c) => {
     const items = c.items.map((i) => articles[i]);
     const groups = new Set(items.map((a) => a.group));
     const independent = groups.size;
@@ -132,17 +138,16 @@ export function clusterArticles(articles: Article[]): Story[] {
     const repA = articles[rep];
     const summary = repA.summary || items.find((a) => a.summary)?.summary || "";
 
-    // One link per outlet name, earliest reporter first
-    const outlets: { name: string; link: string }[] = [];
+    // One entry per outlet name (its own headline and time), earliest reporter first
+    const outlets: StoryOutlet[] = [];
     const seenNames = new Set<string>();
-    [...items]
-      .sort((a, b) => a.publishedAt - b.publishedAt)
-      .forEach((a) => {
-        if (!seenNames.has(a.sourceName)) {
-          seenNames.add(a.sourceName);
-          outlets.push({ name: a.sourceName, link: a.link });
-        }
-      });
+    const byTime = [...items].sort((a, b) => a.publishedAt - b.publishedAt);
+    byTime.forEach((a) => {
+      if (!seenNames.has(a.sourceName)) {
+        seenNames.add(a.sourceName);
+        outlets.push({ name: a.sourceName, link: a.link, title: a.title, publishedAt: a.publishedAt });
+      }
+    });
 
     const catCount = new Map<Category, number>();
     items.forEach((a) => catCount.set(a.category, (catCount.get(a.category) ?? 0) + 1));
@@ -156,7 +161,8 @@ export function clusterArticles(articles: Article[]): Story[] {
     const score = (independent * 10 + items.length * 2) * Math.exp(-ageH / 14);
 
     return {
-      id: `s${idx}-${repA.id}`,
+      // Stable across refreshes: based on the first article that broke the story
+      id: hashId(byTime[0].link),
       headline: repA.title,
       summary,
       category,

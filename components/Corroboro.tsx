@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { QuizCard, QuizDialog, buildQuiz, type QuizQuestion } from "./Quiz";
+import { NewStoriesButton, StoryActions, WatchedBanner, useLiveFeed, useSharedStory, useWatch } from "./interactive";
 import type { Category, Edition, Feed, SocialSignal, Story } from "@/lib/types";
 import { Customize } from "./Customize";
 import { ThemeButton, useTheme } from "./theme";
@@ -49,7 +51,8 @@ function ago(ts: number, now: number) {
   return `${Math.round(h / 24)} d ago`;
 }
 
-export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: number }) {
+export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outletCount: number }) {
+  const { feed, pending, applyPending } = useLiveFeed(initialFeed);
   const { prefs, update, reset, edition, ready } = usePrefs();
   const { theme, setTheme } = useTheme();
   const [tab, setTab] = useState<Tab>("top");
@@ -57,6 +60,9 @@ export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: numb
   const [now, setNow] = useState(feed.generatedAt);
   const [panelOpen, setPanelOpen] = useState(false);
   const interested = hasInterests(prefs);
+  const watch = useWatch(feed.stories);
+  const { sharedId, clearShared } = useSharedStory();
+  const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
 
   useEffect(() => {
     setNow(Date.now());
@@ -99,9 +105,33 @@ export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: numb
     });
   }, [editionStories, tab, prefs.verifiedOnly, query]);
 
-  // Lead = the highest-ranked story with at least two outlets, so a lone rumour never takes the top spot.
-  const lead = visible.find((v) => v.story.independent >= 2) ?? visible[0];
-  const rest = visible.filter((v) => v !== lead);
+  // A shared link (#story-id) pins that story on top, whatever the filters.
+  const sharedStory = sharedId ? feed.stories.find((s) => s.id === sharedId) : undefined;
+  // Otherwise the lead is the highest-ranked story with at least two outlets, so a lone rumour never takes the top spot.
+  const lead = sharedStory
+    ? { story: sharedStory, rank: 0, interests: matchedInterests(sharedStory, prefs) }
+    : (visible.find((v) => v.story.independent >= 2) ?? visible[0]);
+  const rest = visible.filter((v) => v.story.id !== lead?.story.id);
+
+  const newCount = pending ? pending.feed.stories.filter((s) => pending.newIds.includes(s.id) && inEdition(s, edition)).length : 0;
+  // New stories that aren't in this edition: apply quietly
+  useEffect(() => {
+    if (pending && newCount === 0) applyPending();
+  }, [pending, newCount, applyPending]);
+
+  // Scroll to and flash a story pinned from a shared link or the watch banner
+  useEffect(() => {
+    if (!sharedStory) return;
+    const el = document.getElementById(`story-${sharedStory.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.remove("flash");
+      void el.offsetWidth;
+      el.classList.add("flash");
+    }
+  }, [sharedStory]);
+
+  const quizReady = editionStories.filter((v) => v.story.status === "verified").length >= 6;
   const verifiedCount = editionStories.filter((v) => v.story.status === "verified").length;
   const outletNames = useMemo(() => [...new Set(feed.stories.flatMap((s) => s.outlets.map((o) => o.name)))].sort(), [feed.stories]);
   const signals = feed.signals.filter((s) => signalInEdition(s, edition));
@@ -221,10 +251,46 @@ export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: numb
             </button>
           </div>
 
-          {showNudge && <Nudge prefs={prefs} update={update} onMore={() => setPanelOpen(true)} onFollow={() => setTab("foryou")} />}
+          {pending && newCount > 0 && (
+            <NewStoriesButton
+              count={newCount}
+              onShow={() => {
+                applyPending();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            />
+          )}
+
+          <WatchedBanner
+            stories={watch.nowVerified}
+            onOpen={(s) => {
+              watch.markSeen(s.id);
+              window.location.hash = `story-${s.id}`;
+            }}
+          />
+
+          {sharedId && !sharedStory && (
+            <p className="mb-6 rounded-2xl bg-paper px-5 py-3.5 text-[15px] text-slate">
+              That shared story has dropped off the trending list. Here&apos;s what&apos;s trending now.{" "}
+              <button onClick={clearShared} className="text-marine hover:underline">
+                Dismiss
+              </button>
+            </p>
+          )}
+
+          {showNudge && !sharedStory && <Nudge prefs={prefs} update={update} onMore={() => setPanelOpen(true)} onFollow={() => setTab("foryou")} />}
 
           {lead ? (
-            <Lead story={lead.story} interests={lead.interests} now={now} prefs={prefs} />
+            <Lead
+              story={lead.story}
+              interests={lead.interests}
+              now={now}
+              prefs={prefs}
+              shared={Boolean(sharedStory)}
+              onBack={clearShared}
+              watching={watch.isWatched(lead.story.id)}
+              onWatch={() => watch.toggle(lead.story)}
+            />
           ) : (
             <Empty
               tab={tab}
@@ -240,17 +306,30 @@ export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: numb
           {rest.length > 0 && (
             <ol className="mt-10 border-t border-line">
               {rest.map(({ story, interests }) => (
-                <StoryRow key={story.id} story={story} interests={interests} now={now} edition={edition} showCategory={tab === "top" || tab === "foryou"} prefs={prefs} />
+                <StoryRow
+                  key={story.id}
+                  story={story}
+                  interests={interests}
+                  now={now}
+                  edition={edition}
+                  showCategory={tab === "top" || tab === "foryou"}
+                  prefs={prefs}
+                  watching={watch.isWatched(story.id)}
+                  onWatch={() => watch.toggle(story)}
+                />
               ))}
             </ol>
           )}
         </div>
 
         <aside className="lg:sticky lg:top-36 lg:self-start">
+          <QuizCard available={quizReady} onStart={() => setQuiz(buildQuiz(editionStories.map((v) => v.story), storyTag))} />
           <SocialRail signals={signals} stories={feed.stories} />
           <HowItWorks />
         </aside>
       </main>
+
+      {quiz && quiz.length > 0 && <QuizDialog questions={quiz} onClose={() => setQuiz(null)} />}
 
       <Customize
         open={panelOpen}
@@ -344,9 +423,35 @@ function InterestTags({ interests }: { interests: string[] }) {
   );
 }
 
-function Lead({ story, interests, now, prefs }: { story: Story; interests: string[]; now: number; prefs: Prefs }) {
+function Lead({
+  story,
+  interests,
+  now,
+  prefs,
+  shared,
+  onBack,
+  watching,
+  onWatch,
+}: {
+  story: Story;
+  interests: string[];
+  now: number;
+  prefs: Prefs;
+  shared: boolean;
+  onBack: () => void;
+  watching: boolean;
+  onWatch: () => void;
+}) {
   return (
-    <article key={story.id}>
+    <article key={story.id} id={`story-${story.id}`} className="-mx-3 px-3 py-2">
+      {shared && (
+        <div className="mb-4 flex items-center gap-3 text-[14px]">
+          <span className="rounded-full bg-marine/15 px-3 py-1 text-marine">Shared with you</span>
+          <button onClick={onBack} className="text-slate hover:text-ink">
+            Back to top stories
+          </button>
+        </div>
+      )}
       <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
         <Tally count={story.independent} status={story.status} size="lg" animate />
         <p className={`pb-1 text-[15px] font-medium ${story.status === "verified" ? "text-seal" : story.status === "developing" ? "text-amber" : "text-slate"}`}>
@@ -370,6 +475,9 @@ function Lead({ story, interests, now, prefs }: { story: Story; interests: strin
         )}
         <InterestTags interests={interests} />
       </div>
+      <div className="mt-4">
+        <StoryActions story={story} now={now} watching={watching} onWatch={onWatch} hiddenOutlets={prefs.hiddenOutlets} defaultOpen={shared} />
+      </div>
     </article>
   );
 }
@@ -381,6 +489,8 @@ function StoryRow({
   edition,
   showCategory,
   prefs,
+  watching,
+  onWatch,
 }: {
   story: Story;
   interests: string[];
@@ -388,10 +498,12 @@ function StoryRow({
   edition: Edition;
   showCategory: boolean;
   prefs: Prefs;
+  watching: boolean;
+  onWatch: () => void;
 }) {
   const link = story.outlets.find((o) => !prefs.hiddenOutlets.includes(o.name))?.link;
   return (
-    <li className="border-b border-line py-5 sm:grid sm:grid-cols-[92px_minmax(0,1fr)] sm:gap-x-4">
+    <li id={`story-${story.id}`} className="border-b border-line py-5 sm:grid sm:grid-cols-[92px_minmax(0,1fr)] sm:gap-x-4">
       <div className="mb-2.5 sm:mb-0 sm:pt-1.5">
         <Tally count={story.independent} status={story.status} />
       </div>
@@ -418,6 +530,9 @@ function StoryRow({
             </span>
           )}
           <InterestTags interests={interests} />
+        </div>
+        <div className="mt-2">
+          <StoryActions story={story} now={now} watching={watching} onWatch={onWatch} hiddenOutlets={prefs.hiddenOutlets} />
         </div>
       </div>
     </li>

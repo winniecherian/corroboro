@@ -31,7 +31,7 @@ export type Article = {
 
 export type Status = "verified" | "developing" | "single";
 
-export type StoryOutlet = { name: string; link: string };
+export type StoryOutlet = { name: string; link: string; title: string; publishedAt: number };
 
 export type Story = {
   id: string;
