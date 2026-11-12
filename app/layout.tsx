@@ -7,16 +7,20 @@ import "./globals.css";
 import { themeBootScript } from "@/components/theme";
 
 export const metadata: Metadata = {
-  title: "Corroboro — trending news, checked against multiple outlets",
+  title: "Corroboro — trending news, cross-checked",
   description:
-    "What's trending right now across major news outlets, Reddit, Hacker News, Google and X. A tick means at least three independent news organisations reported it.",
+    "A news aggregator: the day's top stories from major news outlets, refreshed every 15 minutes. A story gets a tick when at least three independent newsrooms report it.",
+  openGraph: {
+    title: "Corroboro — trending news, cross-checked",
+    description: "Top stories from major news outlets. A tick means at least three independent newsrooms reported it.",
+    url: "https://corroboro.web.app",
+    siteName: "Corroboro",
+    type: "website",
+  },
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#edf0f5" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d1020" },
-  ],
+  themeColor: "#0d1020",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

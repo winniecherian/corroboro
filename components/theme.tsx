@@ -6,15 +6,15 @@ export type Theme = "system" | "light" | "dark";
 const KEY = "corroboro:theme";
 
 /** Runs before the page paints (inlined in <head>) so there's no white flash for dark-mode readers. */
-export const themeBootScript = `(function(){try{var t=localStorage.getItem('${KEY}');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`;
+export const themeBootScript = `(function(){var t='dark';try{t=localStorage.getItem('${KEY}')||'dark';}catch(e){}if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}})();`;
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("dark"); // dark is the default
 
   useEffect(() => {
     try {
       const t = localStorage.getItem(KEY);
-      if (t === "light" || t === "dark") setThemeState(t);
+      if (t === "light" || t === "dark" || t === "system") setThemeState(t);
     } catch {}
   }, []);
 
@@ -24,8 +24,7 @@ export function useTheme() {
     if (t === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", t);
     try {
-      if (t === "system") localStorage.removeItem(KEY);
-      else localStorage.setItem(KEY, t);
+      localStorage.setItem(KEY, t);
     } catch {}
   }, []);
 
@@ -33,7 +32,7 @@ export function useTheme() {
 }
 
 const LABEL: Record<Theme, string> = { system: "System", light: "Light", dark: "Dark" };
-const NEXT: Record<Theme, Theme> = { system: "light", light: "dark", dark: "system" };
+const NEXT: Record<Theme, Theme> = { dark: "light", light: "system", system: "dark" };
 
 export function ThemeIcon({ theme, size = 18 }: { theme: Theme; size?: number }) {
   const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
@@ -58,7 +57,7 @@ export function ThemeIcon({ theme, size = 18 }: { theme: Theme; size?: number })
   );
 }
 
-/** Header button: cycles System → Light → Dark */
+/** Header button: cycles Dark → Light → System */
 export function ThemeButton({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   const label = `Appearance: ${LABEL[theme]}. Switch to ${LABEL[NEXT[theme]]}`;
   return (
@@ -77,7 +76,7 @@ export function ThemeButton({ theme, setTheme }: { theme: Theme; setTheme: (t: T
 export function ThemePicker({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   return (
     <div role="radiogroup" aria-label="Appearance" className="mt-3 inline-flex rounded-full border border-line p-1">
-      {(["system", "light", "dark"] as Theme[]).map((t) => (
+      {(["dark", "light", "system"] as Theme[]).map((t) => (
         <button
           key={t}
           role="radio"

@@ -49,7 +49,7 @@ function ago(ts: number, now: number) {
   return `${Math.round(h / 24)} d ago`;
 }
 
-export function Corroboro({ feed }: { feed: Feed }) {
+export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: number }) {
   const { prefs, update, reset, edition, ready } = usePrefs();
   const { theme, setTheme } = useTheme();
   const [tab, setTab] = useState<Tab>("top");
@@ -117,10 +117,13 @@ export function Corroboro({ feed }: { feed: Feed }) {
 
       <header className="sticky top-0 z-20 border-b border-line bg-fog/90 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4 md:px-8">
-          <a href="#" className="flex items-center gap-2 text-ink" aria-label="Corroboro home">
+          <a href="#" className="flex items-center gap-2.5 text-ink" aria-label="Corroboro home">
             <Seal size={26} className="text-seal" />
-            <span className="font-display text-[26px] leading-none font-[720] tracking-[-0.02em]" style={{ fontStretch: "76%" }}>
-              corroboro
+            <span className="flex flex-col">
+              <span className="font-display text-[26px] leading-none font-[720] tracking-[-0.02em]" style={{ fontStretch: "76%" }}>
+                corroboro
+              </span>
+              <span className="mt-1 text-[12.5px] leading-none text-slate">Trending news, cross-checked</span>
             </span>
           </a>
 
@@ -193,6 +196,10 @@ export function Corroboro({ feed }: { feed: Feed }) {
 
       <main className="mx-auto grid max-w-[1180px] gap-x-14 gap-y-10 px-5 pt-7 pb-20 md:px-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0">
+          <p className="mb-4 max-w-[64ch] text-[16px] leading-relaxed text-slate">
+            The day&apos;s top stories from {outletCount} major news outlets, refreshed every 15 minutes. A story gets the{" "}
+            <Seal size={16} className="inline -translate-y-px text-seal" /> when at least 3 independent newsrooms report it.
+          </p>
           <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-hush">
             <span>Updated {ago(feed.generatedAt, now)}</span>
             {!feed.sample && (
