@@ -197,7 +197,7 @@ export function Corroboro({ feed, outletCount }: { feed: Feed; outletCount: numb
       <main className="mx-auto grid max-w-[1180px] gap-x-14 gap-y-10 px-5 pt-7 pb-20 md:px-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0">
           <p className="mb-4 max-w-[64ch] text-[16px] leading-relaxed text-slate">
-            The day&apos;s top stories from {outletCount} major news outlets, refreshed every 15 minutes. A story gets the{" "}
+            The day&apos;s top stories from {outletCount} major news outlets, refreshed every 10 minutes. A story gets the{" "}
             <Seal size={16} className="inline -translate-y-px text-seal" /> when at least 3 independent newsrooms report it.
           </p>
           <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-hush">

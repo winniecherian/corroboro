@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://corroboro.web.app"),
   title: "Corroboro — trending news, cross-checked",
   description:
-    "A news aggregator: the day's top stories from major news outlets, refreshed every 15 minutes. A story gets a tick when at least three independent newsrooms report it.",
+    "A news aggregator: the day's top stories from major news outlets, refreshed every 10 minutes. A story gets a tick when at least three independent newsrooms report it.",
   openGraph: {
     title: "Corroboro — trending news, cross-checked",
     description: "Top stories from major news outlets. A tick means at least three independent newsrooms reported it.",

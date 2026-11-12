@@ -44,12 +44,12 @@ Copy `.env.example` to `.env.local` and fill in what you want:
 ## Go live on Firebase (free)
 
 Corroboro deploys as a plain static site, so it runs on Firebase Hosting's free Spark plan. No server and no paid plan needed.
-A GitHub Actions job rebuilds the site with fresh news every 15 minutes and redeploys it.
+A GitHub Actions job rebuilds the site with fresh news every 10 minutes and redeploys it.
 
 **One-time setup**
 
 1. **Firebase:** create a project at https://console.firebase.google.com, then open Build → Hosting → Get started. Put your project ID in `.firebaserc`.
-2. **GitHub:** create a **public** repository and push this folder to its `main` branch. Public repos get unlimited Actions minutes; a private repo's 2,000 free minutes a month would run out on a 15-minute schedule.
+2. **GitHub:** create a **public** repository and push this folder to its `main` branch. Public repos get unlimited Actions minutes; a private repo's 2,000 free minutes a month would run out on a 10-minute schedule.
 3. **Service account:** in the Firebase console, open Project settings → Service accounts → Generate new private key. That downloads a JSON file.
 4. **GitHub secrets:** in the repo, open Settings → Secrets and variables → Actions and add:
    - `FIREBASE_SERVICE_ACCOUNT`: paste the whole JSON file
