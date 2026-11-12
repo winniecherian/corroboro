@@ -33,6 +33,13 @@ function categoryLabel(c: Category, edition: Edition) {
   return SECTION_LABEL[c];
 }
 
+/** Tag shown on a story: national stories name their own country, not the reader's edition. */
+function storyTag(s: Story) {
+  if (s.category !== "nation") return SECTION_LABEL[s.category];
+  const r = s.regions.find((x) => x !== "global");
+  return EDITIONS.find((e) => e.id === r)?.nation ?? "World";
+}
+
 function ago(ts: number, now: number) {
   const m = Math.max(0, Math.round((now - ts) / 60_000));
   if (m < 1) return "just now";
@@ -394,7 +401,7 @@ function StoryRow({
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-hush">
           <span>{ago(story.latest, now)}</span>
-          {showCategory && <span>{categoryLabel(story.category, edition)}</span>}
+          {showCategory && <span>{storyTag(story)}</span>}
           {story.social.length > 0 && (
             <span className="flex items-center gap-1">
               Trending on
