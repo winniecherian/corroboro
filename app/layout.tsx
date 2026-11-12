@@ -7,6 +7,7 @@ import "./globals.css";
 import { themeBootScript } from "@/components/theme";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://corroboro.web.app"),
   title: "Corroboro — trending news, cross-checked",
   description:
     "A news aggregator: the day's top stories from major news outlets, refreshed every 15 minutes. A story gets a tick when at least three independent newsrooms report it.",
@@ -16,6 +17,13 @@ export const metadata: Metadata = {
     url: "https://corroboro.web.app",
     siteName: "Corroboro",
     type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Corroboro — trending news, cross-checked" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Corroboro — trending news, cross-checked",
+    description: "Top stories from major news outlets. A tick means at least three independent newsrooms reported it.",
+    images: ["/og.png"],
   },
 };
 
