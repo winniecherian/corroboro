@@ -2,7 +2,7 @@
 
 Trending news from major outlets, Reddit, Hacker News, Google Trends and X, with a tick when at least 3 independent news organisations report the same story.
 
-No login, no database. The site fetches everything on the server and refreshes every 10 minutes.
+No login, no database. The site fetches everything on the server and refreshes every 5 minutes.
 
 ## Appearance and language
 
@@ -44,7 +44,7 @@ Copy `.env.example` to `.env.local` and fill in what you want:
 ## Go live on Firebase (free)
 
 Corroboro deploys as a plain static site, so it runs on Firebase Hosting's free Spark plan. No server and no paid plan needed.
-A GitHub Actions job rebuilds the site with fresh news every 10 minutes and redeploys it.
+A GitHub Actions job rebuilds the site with fresh news every 5 minutes and redeploys it.
 
 **One-time setup**
 

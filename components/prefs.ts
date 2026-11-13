@@ -121,12 +121,12 @@ export function matchedInterests(story: Story, prefs: Prefs): string[] {
 /** Is this story part of the chosen edition? */
 export function inEdition(story: Story, edition: Edition): boolean {
   if (story.regions.includes("global")) return true;
-  if (edition === "global") return story.independent >= 5; // only the biggest national stories reach Global
+  if (edition === "global") return story.independent >= 5 || (story.regions.length >= 2 && story.independent >= 3); // big national stories, or any verified story reported in more than one region
   return story.regions.includes(edition as Region);
 }
 
 export function editionScore(story: Story, edition: Edition): number {
-  return edition !== "global" && story.regions.includes(edition as Region) ? story.score * 1.6 : story.score;
+  return edition !== "global" && story.regions.includes(edition as Region) ? story.score * 1.3 : story.score;
 }
 
 export function signalInEdition(s: SocialSignal, edition: Edition): boolean {

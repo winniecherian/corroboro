@@ -1,25 +1,27 @@
 # Rebuilds Corroboro with fresh news and deploys it to Firebase Hosting.
-# Runs every 10 minutes, on every push to main, and on demand (Actions tab → Run workflow).
+#
+# Why it is built this way: GitHub's own schedule (cron) is best-effort and often skips runs for hours.
+# So each run, once it has deployed, waits and then starts the next one itself (about every 5 minutes).
+# The cron below is only a watchdog: if the chain ever breaks, it restarts it within 15 minutes.
+# Also runs on every push to main and on demand (Actions tab -> Run workflow).
 # Keep the repository PUBLIC: GitHub Actions minutes are unlimited for public repos.
-# A private repo gets 2,000 free minutes a month, which a 10-minute schedule would use up.
 
 name: Refresh and deploy
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/15 * * * *"
   push:
     branches: [main]
   workflow_dispatch:
-
-concurrency:
-  group: deploy
-  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
     env:
       HAS_FIREBASE: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
     steps:
@@ -56,3 +58,30 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: corroboro-cb2d1
           channelId: live
+
+  # Starts the next run about 5 minutes after this one began, unless another run is already active.
+  next:
+    needs: deploy
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      actions: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Wait, then start the next refresh
+        run: |
+          active() {
+            for st in in_progress queued; do
+              gh api "repos/$REPO/actions/workflows/refresh.yml/runs?status=$st&per_page=50" \
+                --jq "[.workflow_runs[] | select(.id != $RUN_ID)] | length"
+            done | paste -sd+ - | bc
+          }
+          if [ "$(active)" -gt 0 ]; then echo "Another run is active; it will keep the chain going."; exit 0; fi
+          sleep 200
+          if [ "$(active)" -gt 0 ]; then echo "Another run started meanwhile."; exit 0; fi
+          gh workflow run refresh.yml --repo "$REPO" --ref main

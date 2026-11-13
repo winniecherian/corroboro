@@ -8,7 +8,7 @@ const parser = new Parser({
   headers: { "User-Agent": "Mozilla/5.0 (compatible; CorroboroBot/0.1; +https://corroboro.app)" },
 });
 
-const MAX_AGE_MS = 36 * 60 * 60 * 1000; // ignore articles older than 36 hours
+const MAX_AGE_MS = 18 * 60 * 60 * 1000; // ignore articles older than 18 hours
 
 export function cleanText(s: string | undefined, max = 280): string {
   if (!s) return "";

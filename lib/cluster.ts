@@ -158,7 +158,13 @@ export function clusterArticles(articles: Article[]): Story[] {
     const firstSeen = Math.min(...items.map((a) => a.publishedAt));
     const latest = Math.max(...items.map((a) => a.publishedAt));
     const ageH = (now - latest) / 3_600_000;
-    const score = (independent * 10 + items.length * 2) * Math.exp(-ageH / 14);
+    // Momentum: independent newsrooms that published in the last 3 hours
+    const recent = new Set(items.filter((a) => now - a.publishedAt <= 3 * 3_600_000).map((a) => a.group)).size;
+    // Fresh, widely-confirmed, worldwide stories rise; stale or single-source ones sink.
+    const trust = status === "verified" ? 1 : status === "developing" ? 0.55 : 0.25;
+    const worldwide = 1 + 0.35 * Math.min(2, Math.max(0, regions.length - 1));
+    const score = (independent * 10 + items.length * 2 + recent * 8) * Math.exp(-ageH / 6) * trust * worldwide;
+    const breaking = status === "verified" && ageH <= 3 && recent >= 3;
 
     return {
       // Stable across refreshes: based on the first article that broke the story
@@ -173,6 +179,8 @@ export function clusterArticles(articles: Article[]): Story[] {
       firstSeen,
       latest,
       score,
+      recent,
+      breaking,
       social: [],
     };
   });

@@ -21,10 +21,10 @@ export function storyUrl(id: string) {
 
 /* ---------------------------------------------------------------- live updates */
 
-const POLL_MS = 3 * 60_000;
+const POLL_MS = 60_000;
 
 /**
- * Keeps the feed fresh while the page is open. Checks /feed.json every few minutes;
+ * Keeps the feed fresh while the page is open. Checks /feed.json every minute and whenever the tab comes back into view;
  * if new stories arrived it holds them until the reader taps "Show", so the page never jumps under them.
  */
 export function useLiveFeed(initial: Feed) {

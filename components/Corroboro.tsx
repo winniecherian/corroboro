@@ -6,7 +6,7 @@ import { NewStoriesButton, StoryActions, WatchedBanner, useLiveFeed, useSharedSt
 import type { Category, Edition, Feed, SocialSignal, Story } from "@/lib/types";
 import { Customize } from "./Customize";
 import { ThemeButton, useTheme } from "./theme";
-import { PlatformGlyph, Seal, StatusLabel, Tally, platformName, statusText } from "./marks";
+import { BreakingLabel, PlatformGlyph, Seal, StatusLabel, Tally, platformName, statusText } from "./marks";
 import {
   EDITIONS,
   TOPICS,
@@ -227,7 +227,7 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
       <main className="mx-auto grid max-w-[1180px] gap-x-14 gap-y-10 px-5 pt-7 pb-20 md:px-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0">
           <p className="mb-4 max-w-[64ch] text-[16px] leading-relaxed text-slate">
-            The day&apos;s top stories from {outletCount} major news outlets, refreshed every 10 minutes. A story gets the{" "}
+            The day&apos;s top stories from {outletCount} major news outlets, refreshed every 5 minutes, newest first. A story gets the{" "}
             <Seal size={16} className="inline -translate-y-px text-seal" /> when at least 3 independent newsrooms report it.
           </p>
           <div className="mb-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-hush">
@@ -452,6 +452,11 @@ function Lead({
           </button>
         </div>
       )}
+      {story.breaking && (
+        <div className="mb-3">
+          <BreakingLabel />
+        </div>
+      )}
       <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
         <Tally count={story.independent} status={story.status} size="lg" animate />
         <p className={`pb-1 text-[15px] font-medium ${story.status === "verified" ? "text-seal" : story.status === "developing" ? "text-amber" : "text-slate"}`}>
@@ -515,6 +520,7 @@ function StoryRow({
         </h2>
         {story.summary && <p className="mt-1.5 line-clamp-2 max-w-[68ch] text-[15.5px] leading-[1.55] text-slate">{story.summary}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2">
+          {story.breaking && <BreakingLabel />}
           <StatusLabel status={story.status} count={story.independent} />
           <Outlets story={story} max={3} prefs={prefs} />
         </div>
@@ -605,7 +611,7 @@ function Empty({ tab, onReset, onCustomize }: { tab: Tab; onReset: () => void; o
     return (
       <div className="rounded-2xl bg-paper p-8">
         <p className="headline text-[24px] text-ink">Nothing on your topics right now</p>
-        <p className="mt-2 text-slate">New stories arrive every 10 minutes. Add more topics or keywords to widen your feed.</p>
+        <p className="mt-2 text-slate">New stories arrive every few minutes. Add more topics or keywords to widen your feed.</p>
         <button onClick={onCustomize} className="mt-4 rounded-full bg-ink px-4 py-2 text-[15px] text-paper">
           Add topics
         </button>

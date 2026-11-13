@@ -46,6 +46,10 @@ export type Story = {
   firstSeen: number;
   latest: number;
   score: number;
+  /** Independent newsrooms that published in the last 3 hours */
+  recent?: number;
+  /** Verified and still being reported right now */
+  breaking?: boolean;
   /** Social platforms where this story is also trending */
   social: SocialPlatform[];
 };

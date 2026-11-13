@@ -64,6 +64,15 @@ export function statusText(status: Status, n: number) {
   return "Single source, not yet confirmed";
 }
 
+export function BreakingLabel() {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-seal px-2.5 py-0.5 text-[13px] font-semibold text-paper">
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-paper" />
+      Breaking
+    </span>
+  );
+}
+
 export function StatusLabel({ status, count }: { status: Status; count: number }) {
   const cls =
     status === "verified"
