@@ -136,3 +136,36 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .pop-in, .reveal, .flash { animation: none; }
 }
+
+/* Calm attention: a slow glow on the top stories, a one-time shimmer on a fresh tick, a gentle ticker. No fast blinking. */
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--seal) 0%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--seal) 22%, transparent); }
+}
+.glow { animation: glow 3.8s ease-in-out infinite; }
+
+@keyframes shimmer {
+  from { background-position: 160% 0; }
+  to { background-position: -60% 0; }
+}
+.shimmer {
+  background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--seal) 38%, transparent) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-out 0.6s 2 both;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.ticker-move { animation: ticker 70s linear infinite; }
+.ticker:hover .ticker-move, .ticker:focus-within .ticker-move { animation-play-state: paused; }
+.ticker-track {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 24px, #000 calc(100% - 24px), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .glow, .shimmer { animation: none; }
+  .ticker-move { animation: none; }
+  .ticker-track { overflow-x: auto; }
+}

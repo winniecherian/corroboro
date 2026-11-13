@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { QuizCard, QuizDialog, buildQuiz, type QuizQuestion } from "./Quiz";
+import { BackToTop, BriefView, RightNow, Ticker, isRising, justVerified } from "./Highlights";
 import { NewStoriesButton, StoryActions, WatchedBanner, useLiveFeed, useSharedStory, useWatch } from "./interactive";
 import type { Category, Edition, Feed, SocialSignal, Story } from "@/lib/types";
 import { Customize } from "./Customize";
@@ -63,6 +64,7 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
   const watch = useWatch(feed.stories);
   const { sharedId, clearShared } = useSharedStory();
   const [quiz, setQuiz] = useState<QuizQuestion[] | null>(null);
+  const [brief, setBrief] = useState(false);
 
   useEffect(() => {
     setNow(Date.now());
@@ -130,6 +132,17 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
       el.classList.add("flash");
     }
   }, [sharedStory]);
+
+  // Highlights shown on the main Top view only
+  const mainView = tab === "top" && !query.trim() && !sharedId;
+  const hotStories = useMemo(() => {
+    const fresh = editionStories.filter((v) => v.story.status === "verified" && now - v.story.latest <= 12 * 3_600_000);
+    return fresh.slice(0, 5).map((v) => v.story);
+  }, [editionStories, now]);
+  const tickerStories = useMemo(() => {
+    const hot = editionStories.filter((v) => v.story.breaking).map((v) => v.story);
+    return (hot.length >= 3 ? hot : editionStories.filter((v) => v.story.status === "verified").map((v) => v.story)).slice(0, 8);
+  }, [editionStories]);
 
   const quizReady = editionStories.filter((v) => v.story.status === "verified").length >= 6;
   const verifiedCount = editionStories.filter((v) => v.story.status === "verified").length;
@@ -224,6 +237,8 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
         </div>
       </header>
 
+      {mainView && <Ticker stories={tickerStories} />}
+
       <main className="mx-auto grid max-w-[1180px] gap-x-14 gap-y-10 px-5 pt-7 pb-20 md:px-8 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div className="min-w-0">
           <p className="mb-4 max-w-[64ch] text-[16px] leading-relaxed text-slate">
@@ -248,6 +263,12 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
                 <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-paper transition-transform ${prefs.verifiedOnly ? "translate-x-4" : ""}`} />
               </span>
               Verified only
+            </button>
+            <button
+              onClick={() => setBrief(true)}
+              className="flex items-center gap-2 rounded-full border border-line bg-paper px-3 py-1 text-[14px] text-slate hover:text-ink"
+            >
+              Brief mode
             </button>
           </div>
 
@@ -277,6 +298,8 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
               </button>
             </p>
           )}
+
+          {mainView && <RightNow stories={hotStories} now={now} />}
 
           {showNudge && !sharedStory && <Nudge prefs={prefs} update={update} onMore={() => setPanelOpen(true)} onFollow={() => setTab("foryou")} />}
 
@@ -328,6 +351,11 @@ export function Corroboro({ feed: initialFeed, outletCount }: { feed: Feed; outl
           <HowItWorks />
         </aside>
       </main>
+
+      {brief && (
+        <BriefView stories={visible.map((v) => v.story)} now={now} hidden={prefs.hiddenOutlets} onClose={() => setBrief(false)} />
+      )}
+      <BackToTop />
 
       {quiz && quiz.length > 0 && <QuizDialog questions={quiz} onClose={() => setQuiz(null)} />}
 
@@ -443,7 +471,7 @@ function Lead({
   onWatch: () => void;
 }) {
   return (
-    <article key={story.id} id={`story-${story.id}`} className="-mx-3 px-3 py-2">
+    <article key={story.id} id={`story-${story.id}`} className={`-mx-3 rounded-2xl px-3 py-2 ${story.breaking ? "glow" : ""}`}>
       {shared && (
         <div className="mb-4 flex items-center gap-3 text-[14px]">
           <span className="rounded-full bg-marine/15 px-3 py-1 text-marine">Shared with you</span>
@@ -521,7 +549,11 @@ function StoryRow({
         {story.summary && <p className="mt-1.5 line-clamp-2 max-w-[68ch] text-[15.5px] leading-[1.55] text-slate">{story.summary}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2">
           {story.breaking && <BreakingLabel />}
-          <StatusLabel status={story.status} count={story.independent} />
+          <span className={`rounded-full ${justVerified(story, now) ? "shimmer" : ""}`}>
+            <StatusLabel status={story.status} count={story.independent} />
+          </span>
+          {justVerified(story, now) && <span className="text-[13px] font-medium text-seal">Just verified</span>}
+          {isRising(story, now) && <span className="text-[13px] font-medium text-amber">↑ Rising</span>}
           <Outlets story={story} max={3} prefs={prefs} />
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-hush">
